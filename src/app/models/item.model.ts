@@ -28,13 +28,13 @@ export class ItemTree implements ItemTreeType {
     item: string;
     children: ItemTree[] = [];
 
-
     constructor(itemTree: ItemTreeType) {
         this.itemID = itemTree.itemID;
         this.item = itemTree.item;
         this.children = itemTree.children;
     }
 
+    // It made sense for this to be static because it doesn't depend on an instance of ItemTree
     static generateTreeFromItemList(items: Item[]): ItemTree[] {
         const itemMap = new Map<number, ItemTree>();
         const itemParentMap = new Map<number, number>();
@@ -67,21 +67,19 @@ export class ItemTree implements ItemTreeType {
 
             const visited = new Set<number>();
             let currentItemID = item.itemID;
-            const chain: number[] = [];
 
-            // Traverse up to find root and collect the chain
+            // Traverse up to find root
             while (itemMap.has(currentItemID)) {
                 if (visited.has(currentItemID)) {
-                    throw new Error(`Cyclical reference detected involving itemID: ${item.itemID}`);
+                    throw new Error(`Cyclical reference detected: ${Array.from(visited).join(' -> ').concat(` -> ${currentItemID}`)}`);
                 }
                 visited.add(currentItemID);
 
                 if (addedToTree.has(currentItemID)) {
-                    // Already processed, don't traverse further
                     break;
                 }
 
-                chain.push(currentItemID);
+                addedToTree.add(currentItemID);
                 const parentID = itemParentMap.get(currentItemID)!;
 
                 // If parent doesn't exist in map, current is a root
@@ -92,9 +90,6 @@ export class ItemTree implements ItemTreeType {
 
                 currentItemID = parentID;
             }
-
-            // Mark all items in chain as added
-            chain.forEach(id => addedToTree.add(id));
         }
 
         // Now build the actual tree structure by updating the map
